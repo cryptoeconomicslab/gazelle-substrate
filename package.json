@@ -14,6 +14,7 @@
     "build": "lerna run build",
     "build:check": "lerna run build:check",
     "clean": "lerna run clean",
+    "coverage": "jest --coverage",
     "doc": "typedoc --excludeNotExported --excludePrivate --out docs packages/**/src",
     "test": "npm run build && jest",
     "lint": "lerna run lint"
