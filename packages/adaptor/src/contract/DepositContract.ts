@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import AccountId from '@polkadot/types/primitive/Generic/AccountId'
+import AccountId from '@polkadot/types/generic/AccountId'
 import { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
 import { IDepositContract, EventLog } from '@cryptoeconomicslab/contract'

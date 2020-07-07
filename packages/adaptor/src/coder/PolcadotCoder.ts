@@ -188,7 +188,7 @@ function innerDecode(registry: TypeRegistry, definition: Codable, data: Bytes) {
   } else if (definition instanceof FixedBytes) {
     return types.Vec.decodeVec(registry, types.u8, data.data)
   } else if (definition instanceof Integer || definition instanceof BigNumber) {
-    return types.u128.decodeAbstracInt(data.data, 256, false)
+    return new types.u128(registry, data.data)
   } else if (definition instanceof List) {
     return types.Vec.decodeVec(registry, getVecType(definition), data.data)
   } else if (definition instanceof Tuple) {

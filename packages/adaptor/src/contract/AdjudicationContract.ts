@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import AccountId from '@polkadot/types/primitive/Generic/AccountId'
+import AccountId from '@polkadot/types/generic/AccountId'
 import types, { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
 import { IAdjudicationContract, EventLog } from '@cryptoeconomicslab/contract'
@@ -19,7 +19,6 @@ import {
   decodeFromPolcadotCodec,
   encodeToPolcadotCodec
 } from '../coder/PolcadotCoder'
-
 /**
  * @name AdjudicationContract
  * @description Adjudication Contract is the contract to archive dispute game defined by predicate logic.

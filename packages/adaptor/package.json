@@ -35,8 +35,9 @@
     "@cryptoeconomicslab/plasma": "0.4.0",
     "@cryptoeconomicslab/primitives": "0.4.0",
     "@cryptoeconomicslab/wallet": "0.4.0",
-    "@polkadot/api": "^0.100.1",
-    "@polkadot/keyring": "^1.8.1",
+    "@polkadot/api": "^1.18.1",
+    "@polkadot/keyring": "^2.13.1",
+    "@polkadot/types": "^1.18.1",
     "jsbi": "^3.1.2"
   },
   "devDependencies": {
