@@ -12,24 +12,29 @@ import { config } from 'dotenv'
 config()
 
 import Cli from 'cac'
+import { time } from 'console'
 const cli = Cli()
 
 const tokenAddress = deciderConfig.payoutContracts.DepositContract
 
 function getKeyringPair() {
   const keyringType = process.env.KEYRING_TYPE || 'SEED'
-  const keyring = new Keyring({ ss58Format: 42, type: 'ecdsa' })
+  const keyring = new Keyring({ ss58Format: 42, type: 'sr25519' });
   if (keyringType === 'SEED') {
     const seed = stringToU8a(process.env.KEYRING_SEED)
     return keyring.addFromSeed(seed, {})
   } else if (keyringType === 'DEV') {
-    return keyring.addFromUri('//Alice', { name: 'user' })
+    return keyring.addFromUri('//Alice', { name: 'root' })
   } else {
     throw new Error('unknown keyring type')
   }
 }
 
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+
 async function instantiate() {
+  console.log('instantiate');
+  await sleep(1000);
   const keyringPair = getKeyringPair()
   const kvs = new LevelKeyValueStore(Bytes.fromString('cli'), leveldown('.db'))
   return initialize({ keyringPair, kvs, config: deciderConfig as any })
@@ -55,6 +60,7 @@ cli
   })
 
 cli.command('deploy', 'deploy').action(async options => {
+  console.log('deplpy coomands')
   const registry = new TypeRegistry()
   const lightClient = await instantiate()
   const api: ApiPromise = lightClient['adjudicationContract']['api']
@@ -70,6 +76,8 @@ cli.command('deploy', 'deploy').action(async options => {
   const exitDepositPredicate = Address.from(
     deciderConfig.deployedPredicateTable.ExitPredicate.deployedAddress
   )
+  console.log('address', keyPair.address);
+  console.log(operatorId, erc20, stateUpdatePredicate, exitPredicate, exitDepositPredicate);
   const r = await api.tx.plasma
     .deploy(
       encodeToPolcadotCodec(registry, operatorId),
@@ -78,7 +86,7 @@ cli.command('deploy', 'deploy').action(async options => {
       encodeToPolcadotCodec(registry, exitPredicate),
       encodeToPolcadotCodec(registry, exitDepositPredicate)
     )
-    .signAndSend(keyPair, { tip: '10000000000000' })
+    .signAndSend(keyPair)
   console.log(r)
 })
 
