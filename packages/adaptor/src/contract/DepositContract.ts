@@ -32,6 +32,7 @@ export class DepositContract implements IDepositContract {
   private registry: TypeRegistry
   private contractId: AccountId
   private eventWatcher: EventWatcher
+  public plappId: Address = Address.default()
 
   constructor(
     readonly address: Address,
@@ -46,6 +47,13 @@ export class DepositContract implements IDepositContract {
       kvs: eventDb,
       contractAddress: address.data
     })
+    this.eventWatcher.subscribe('Deploy', (log: EventLog) => {
+      const encodedPlappId: Codec = log.values[1]
+      this.plappId = this.decodeParam(
+        Address.default(),
+        encodedPlappId
+      ) as Address
+    })
   }
 
   /**
@@ -54,8 +62,10 @@ export class DepositContract implements IDepositContract {
    * @param initialState The initial StateObject to deposit
    */
   async deposit(amount: BigNumber, initialState: Property): Promise<void> {
+    console.log('deposite', this.encodeParam(initialState.toStruct()))
     await this.api.tx.plasma
       .deposit(
+        this.encodeParam(this.plappId),
         this.contractId,
         this.encodeParam(amount),
         this.encodeParam(initialState.toStruct())
@@ -98,13 +108,16 @@ export class DepositContract implements IDepositContract {
     handler: (checkpointId: Bytes, checkpoint: [Property]) => void
   ): void {
     this.eventWatcher.subscribe('CheckpointFinalized', (log: EventLog) => {
-      const checkpointId: Codec = log.values[0]
-      const encodedCheckpoint: Codec = log.values[1]
-      const checkpoint = Checkpoint.fromStruct(
-        this.decodeParam(Checkpoint.getParamType(), encodedCheckpoint) as Struct
-      )
+      const checkpointId: Codec = log.values[1]
+      const checkpoint = log.values[2]
+      console.log('CheckpointFinalized', checkpoint.stateUpdate.inputs[3])
       handler(Bytes.fromHexString(checkpointId.toHex()), [
-        checkpoint.stateUpdate
+        new Property(
+          Address.from(
+            Bytes.from(checkpoint.stateUpdate.predicateAddress).toHexString()
+          ),
+          checkpoint.stateUpdate.inputs.map(i => Bytes.from(i))
+        )
       ])
     })
   }
@@ -126,10 +139,13 @@ export class DepositContract implements IDepositContract {
    */
   subscribeDepositedRangeExtended(handler: (range: Range) => void): void {
     this.eventWatcher.subscribe('DepositedRangeExtended', (log: EventLog) => {
-      const range: Codec = log.values[0]
+      const plappId: Codec = log.values[0]
+      const range = log.values[1]
+      console.log('DepositedRangeExtended', range.start, range.end)
       handler(
-        Range.fromStruct(
-          this.decodeParam(Range.getParamType(), range) as Struct
+        new Range(
+          BigNumber.fromString(range.start.toString()),
+          BigNumber.fromString(range.end.toString())
         )
       )
     })

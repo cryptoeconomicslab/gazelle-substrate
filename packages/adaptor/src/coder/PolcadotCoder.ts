@@ -211,7 +211,7 @@ function innerDecode(registry: TypeRegistry, definition: Codable, data: Bytes) {
       getTupleType(definition as Tuple),
       data.data
     )
-  } else if (definition instanceof Struct) {
+  } else if (name === 'Struct') {
     return new types.Tuple(
       registry,
       getTupleType(definition as Struct),

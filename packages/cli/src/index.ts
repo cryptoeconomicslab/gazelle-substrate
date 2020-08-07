@@ -19,7 +19,7 @@ const tokenAddress = deciderConfig.payoutContracts.DepositContract
 
 function getKeyringPair() {
   const keyringType = process.env.KEYRING_TYPE || 'SEED'
-  const keyring = new Keyring({ ss58Format: 42, type: 'sr25519' });
+  const keyring = new Keyring({ ss58Format: 42, type: 'sr25519' })
   if (keyringType === 'SEED') {
     const seed = stringToU8a(process.env.KEYRING_SEED)
     return keyring.addFromSeed(seed, {})
@@ -30,11 +30,11 @@ function getKeyringPair() {
   }
 }
 
-const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec))
 
 async function instantiate() {
-  console.log('instantiate');
-  await sleep(1000);
+  console.log('instantiate')
+  await sleep(1000)
   const keyringPair = getKeyringPair()
   const kvs = new LevelKeyValueStore(Bytes.fromString('cli'), leveldown('.db'))
   return initialize({ keyringPair, kvs, config: deciderConfig as any })
@@ -43,7 +43,6 @@ async function instantiate() {
 cli.command('deposit <amount>', 'Deposit').action(async (amount, options) => {
   const lightClient = await instantiate()
   await lightClient.deposit(Number(amount), tokenAddress)
-  console.log('deposited')
 })
 cli.command('balance', 'getBalance').action(async options => {
   const lightClient = await instantiate()
@@ -76,8 +75,14 @@ cli.command('deploy', 'deploy').action(async options => {
   const exitDepositPredicate = Address.from(
     deciderConfig.deployedPredicateTable.ExitPredicate.deployedAddress
   )
-  console.log('address', keyPair.address);
-  console.log(operatorId, erc20, stateUpdatePredicate, exitPredicate, exitDepositPredicate);
+  console.log('address', keyPair.address)
+  console.log(
+    operatorId,
+    erc20,
+    stateUpdatePredicate,
+    exitPredicate,
+    exitDepositPredicate
+  )
   const r = await api.tx.plasma
     .deploy(
       encodeToPolcadotCodec(registry, operatorId),
@@ -87,7 +92,6 @@ cli.command('deploy', 'deploy').action(async options => {
       encodeToPolcadotCodec(registry, exitDepositPredicate)
     )
     .signAndSend(keyPair)
-  console.log(r)
 })
 
 cli.help()
