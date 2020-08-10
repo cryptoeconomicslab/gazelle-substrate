@@ -25,6 +25,7 @@ export interface SubstrateLightClientOptions {
   keyringPair: KeyringPair
   kvs: KeyValueStore
   config: DeciderConfig & SubstarteContractConfig
+  plappId: Address
   aggregatorEndpoint?: string
 }
 
@@ -46,7 +47,13 @@ export default async function initialize(options: SubstrateLightClientOptions) {
     keyringPair
   )
   function depositContractFactory(address: Address) {
-    return new DepositContract(address, eventDb, apiPromise, keyringPair)
+    return new DepositContract(
+      address,
+      eventDb,
+      apiPromise,
+      keyringPair,
+      options.plappId
+    )
   }
   function tokenContractFactory(address: Address) {
     return new ERC20Contract(address, apiPromise, keyringPair)

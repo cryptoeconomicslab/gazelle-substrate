@@ -37,7 +37,15 @@ async function instantiate() {
   await sleep(1000)
   const keyringPair = getKeyringPair()
   const kvs = new LevelKeyValueStore(Bytes.fromString('cli'), leveldown('.db'))
-  return initialize({ keyringPair, kvs, config: deciderConfig as any })
+  return initialize({
+    keyringPair,
+    kvs,
+    config: deciderConfig as any,
+    plappId: Address.from(
+      process.env.PLAPP_ID ||
+        '0x99ca750d6ec8ce472e273d950e929aaa57f38d6ee5882b9ff83811f8f335d0d6'
+    )
+  })
 }
 
 cli.command('deposit <amount>', 'Deposit').action(async (amount, options) => {
@@ -83,6 +91,7 @@ cli.command('deploy', 'deploy').action(async options => {
     exitPredicate,
     exitDepositPredicate
   )
+
   const r = await api.tx.plasma
     .deploy(
       encodeToPolcadotCodec(registry, operatorId),

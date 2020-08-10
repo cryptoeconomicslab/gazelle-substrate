@@ -32,13 +32,13 @@ export class DepositContract implements IDepositContract {
   private registry: TypeRegistry
   private contractId: AccountId
   private eventWatcher: EventWatcher
-  public plappId: Address = Address.default()
 
   constructor(
     readonly address: Address,
     readonly eventDb: KeyValueStore,
     readonly api: ApiPromise,
-    readonly keyPair: KeyringPair
+    readonly keyPair: KeyringPair,
+    readonly plappId: Address
   ) {
     this.registry = new TypeRegistry()
     this.contractId = new AccountId(this.registry, this.address.data)
@@ -49,10 +49,11 @@ export class DepositContract implements IDepositContract {
     })
     this.eventWatcher.subscribe('Deploy', (log: EventLog) => {
       const encodedPlappId: Codec = log.values[1]
-      this.plappId = this.decodeParam(
+      const plappId = this.decodeParam(
         Address.default(),
         encodedPlappId
       ) as Address
+      console.log('plappId is', plappId.data)
     })
   }
 
@@ -62,11 +63,14 @@ export class DepositContract implements IDepositContract {
    * @param initialState The initial StateObject to deposit
    */
   async deposit(amount: BigNumber, initialState: Property): Promise<void> {
-    console.log('deposite', this.encodeParam(initialState.toStruct()))
+    console.log('deposite', this.encodeParam(this.plappId))
+    if (this.plappId.equals(Address.default())) {
+      throw new Error('must deploy')
+    }
     await this.api.tx.plasma
       .deposit(
         this.encodeParam(this.plappId),
-        this.contractId,
+        this.encodeParam(this.plappId),
         this.encodeParam(amount),
         this.encodeParam(initialState.toStruct())
       )
@@ -110,7 +114,13 @@ export class DepositContract implements IDepositContract {
     this.eventWatcher.subscribe('CheckpointFinalized', (log: EventLog) => {
       const checkpointId: Codec = log.values[1]
       const checkpoint = log.values[2]
-      console.log('CheckpointFinalized', checkpoint.stateUpdate.inputs[3])
+      console.log(
+        'CheckpointFinalized',
+        checkpoint.stateUpdate.inputs[0],
+        checkpoint.stateUpdate.inputs[1],
+        checkpoint.stateUpdate.inputs[2],
+        checkpoint.stateUpdate.inputs[3]
+      )
       handler(Bytes.fromHexString(checkpointId.toHex()), [
         new Property(
           Address.from(
