@@ -12,7 +12,6 @@ import { config } from 'dotenv'
 config()
 
 import Cli from 'cac'
-import { time } from 'console'
 const cli = Cli()
 
 const tokenAddress = deciderConfig.payoutContracts.DepositContract

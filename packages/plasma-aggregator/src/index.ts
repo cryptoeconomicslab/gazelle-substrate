@@ -72,7 +72,10 @@ const instantiate = async (): Promise<Aggregator> => {
       eventDb,
       apiPromise,
       keyringPair,
-      Address.from('')
+      Address.from(
+        process.env.PLAPP_ID ||
+          '0x99ca750d6ec8ce472e273d950e929aaa57f38d6ee5882b9ff83811f8f335d0d6'
+      )
     )
   }
   function commitmentContractFactory(address: Address) {
