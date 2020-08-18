@@ -67,7 +67,16 @@ const instantiate = async (): Promise<Aggregator> => {
   const eventDb = await kvs.bucket(Bytes.fromString('event'))
   function depositContractFactory(address: Address) {
     console.log('depositContractFactory', address)
-    return new DepositContract(address, eventDb, apiPromise, keyringPair)
+    return new DepositContract(
+      address,
+      eventDb,
+      apiPromise,
+      keyringPair,
+      Address.from(
+        process.env.PLAPP_ID ||
+          '0x99ca750d6ec8ce472e273d950e929aaa57f38d6ee5882b9ff83811f8f335d0d6'
+      )
+    )
   }
   function commitmentContractFactory(address: Address) {
     return new CommitmentContract(address, eventDb, apiPromise, keyringPair)

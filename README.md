@@ -38,6 +38,24 @@ lerna bootstrap
 npm test
 ```
 
+### Test Run
+
+run main chain: https://github.com/staketechnologies/Plasm/tree/feature/runtime-with-plasma
+
+```
+cargo run purge-chain --dev
+cargo run -- --dev
+```
+
+run CLI
+
+```
+cd packages/cli
+npm start -- deploy
+// check plappId and write it as PLAPP_ID at .env.
+npm start -- deposit 100
+```
+
 ### Docmentation
 
 - [Document root of framework](https://github.com/cryptoeconomicslab/ovm-plasma-chamber-spec)
