@@ -8,14 +8,17 @@ import {
   Address,
   Bytes,
   BigNumber,
+  FixedBytes,
   List,
   Struct,
-  Codable
+  Codable,
+  Property
 } from '@cryptoeconomicslab/primitives'
+import { Keccak256 } from '@cryptoeconomicslab/hash'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
 import EventWatcher from '../events/SubstrateEventWatcher'
-import { Property, ChallengeGame } from '@cryptoeconomicslab/ovm'
-import {
+import { ChallengeGame, encodeProperty } from '@cryptoeconomicslab/ovm'
+import PolcadotCoder, {
   decodeFromPolcadotCodec,
   encodeToPolcadotCodec
 } from '../coder/PolcadotCoder'
@@ -70,12 +73,13 @@ export class AdjudicationContract implements IAdjudicationContract {
     const property = Property.fromStruct(
       this.decodeParam(Property.getParamType(), tuple[0]) as Struct
     )
+    const propertyHash = this.getPropertyHash(property)
     const vec = tuple[1] as types.Vec<types.Vec<types.u8>>
     const challenges = vec.map(c => Bytes.fromHexString(c.toHex()))
     const decision = tuple[2] as types.bool
     const createdBlock = BigNumber.from((tuple[3] as types.u128).toNumber())
     return new ChallengeGame(
-      property,
+      propertyHash,
       challenges,
       decision.isTrue,
       createdBlock
@@ -125,23 +129,26 @@ export class AdjudicationContract implements IAdjudicationContract {
    * @param challengingGameId
    */
   async decideClaimToFalse(
-    gameId: Bytes,
-    challengingGameId: Bytes
+    property: Property,
+    challengingGame: Property
   ): Promise<void> {
+    const propertyHash = this.getPropertyHash(property)
+    const challengingGameId = this.getPropertyHash(challengingGame)
     await this.api.tx.adjudication
       .decideClaimToFalse(
-        ...[gameId, challengingGameId].map(i => this.encodeParam(i))
+        ...[propertyHash, challengingGameId].map(i => this.encodeParam(i))
       )
       .signAndSend(this.keyPair, {})
   }
 
   async decideClaimWithWitness(
-    gameId: Bytes,
+    property: Property,
     witnesses: Bytes[]
   ): Promise<void> {
+    const propertyHash = this.getPropertyHash(property)
     await this.api.tx.adjudication
       .decideClaimToFalse(
-        this.encodeParam(gameId),
+        this.encodeParam(propertyHash),
         witnesses.map(w => this.encodeParam(w))
       )
       .signAndSend(this.keyPair, {})
@@ -154,12 +161,14 @@ export class AdjudicationContract implements IAdjudicationContract {
    * @param challengingGameId
    */
   async removeChallenge(
-    gameId: Bytes,
-    challengingGameId: Bytes
+    property: Property,
+    challengingGame: Property
   ): Promise<void> {
+    const propertyHash = this.getPropertyHash(property)
+    const challengingGameId = this.getPropertyHash(challengingGame)
     await this.api.tx.adjudication
       .removeChallenge(
-        ...[gameId, challengingGameId].map(i => this.encodeParam(i))
+        ...[propertyHash, challengingGameId].map(i => this.encodeParam(i))
       )
       .signAndSend(this.keyPair, {})
   }
@@ -183,10 +192,12 @@ export class AdjudicationContract implements IAdjudicationContract {
    * @param challengingGameId
    */
   async challenge(
-    gameId: Bytes,
+    property: Property,
     challengeInputs: List<Bytes>,
-    challengingGameId: Bytes
+    challengingGame: Property
   ): Promise<void> {
+    const gameId = this.getPropertyHash(property)
+    const challengingGameId = this.getPropertyHash(challengingGame)
     await this.api.tx.adjudication
       .challenge(
         ...[gameId, challengeInputs, challengingGameId].map(i =>
@@ -307,5 +318,13 @@ export class AdjudicationContract implements IAdjudicationContract {
 
   private decodeParam(def: Codable, input: Codec): Codable {
     return decodeFromPolcadotCodec(this.registry, def, input)
+  }
+
+  private getPropertyHash(property: Property) {
+    const propertyHash = FixedBytes.fromHexString(
+      32,
+      Keccak256.hash(encodeProperty(PolcadotCoder, property)).toHexString()
+    )
+    return propertyHash
   }
 }

@@ -30,6 +30,13 @@ export class ERC20Contract implements IERC20DetailedContract {
       */
   }
 
+  public async name(): Promise<string> {
+    return ''
+  }
+  public async symbol(): Promise<string> {
+    return ''
+  }
+
   public async decimals(): Promise<Integer> {
     return Integer.from(18)
   }

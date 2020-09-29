@@ -11,12 +11,12 @@ import {
   Range,
   Struct,
   Codable,
-  BigNumber
+  BigNumber,
+  Property
 } from '@cryptoeconomicslab/primitives'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
-import { Checkpoint } from '@cryptoeconomicslab/plasma'
+import { StateUpdate } from '@cryptoeconomicslab/plasma'
 import EventWatcher from '../events/SubstrateEventWatcher'
-import { Property } from '@cryptoeconomicslab/ovm'
 import {
   encodeToPolcadotCodec,
   decodeFromPolcadotCodec
@@ -81,7 +81,7 @@ export class DepositContract implements IDepositContract {
    * finalize checkpoint claim
    * @param checkpoint
    */
-  async finalizeCheckpoint(checkpoint: Property): Promise<void> {
+  async finalizeCheckpoint(checkpoint: StateUpdate): Promise<void> {
     await this.api.tx.deposit
       .finalizeCheckpoint(
         this.contractId,
@@ -95,7 +95,10 @@ export class DepositContract implements IDepositContract {
    * @param exit
    * @param depositedRangeId
    */
-  async finalizeExit(exit: Property, depositedRangeId: Integer): Promise<void> {
+  async finalizeExit(
+    exit: StateUpdate,
+    depositedRangeId: Integer
+  ): Promise<void> {
     await this.api.tx.deposit
       .finalizeCheckpoint(
         this.contractId,
@@ -109,7 +112,12 @@ export class DepositContract implements IDepositContract {
    * @param handler
    */
   subscribeCheckpointFinalized(
-    handler: (checkpointId: Bytes, checkpoint: [Property]) => void
+    handler: (
+      checkpointId: Bytes,
+      checkpoint: StateUpdate,
+      mainchainBlockNumber: BigNumber,
+      mainchainTimestamp: Integer
+    ) => void
   ): void {
     this.eventWatcher.subscribe('CheckpointFinalized', (log: EventLog) => {
       const checkpointId: Codec = log.values[1]
@@ -121,14 +129,17 @@ export class DepositContract implements IDepositContract {
         checkpoint.stateUpdate.inputs[2],
         checkpoint.stateUpdate.inputs[3]
       )
-      handler(Bytes.fromHexString(checkpointId.toHex()), [
-        new Property(
-          Address.from(
-            Bytes.from(checkpoint.stateUpdate.predicateAddress).toHexString()
-          ),
-          checkpoint.stateUpdate.inputs.map(i => Bytes.from(i))
-        )
-      ])
+      handler(
+        Bytes.fromHexString(checkpointId.toHex()),
+        StateUpdate.fromStruct(
+          this.decodeParam(
+            StateUpdate.getParamType(),
+            checkpoint.stateUpdate
+          ) as Struct
+        ),
+        BigNumber.from(0),
+        Integer.from(0)
+      )
     })
   }
 
@@ -136,10 +147,15 @@ export class DepositContract implements IDepositContract {
    * Start to subscribe ExitFinalized event
    * @param handler
    */
-  subscribeExitFinalized(handler: (exitId: Bytes) => void): void {
+  subscribeExitFinalized(
+    handler: (exitId: Bytes, exit: StateUpdate) => void
+  ): void {
     this.eventWatcher.subscribe('ExitFinalized', (log: EventLog) => {
       const exitId: Codec = log.values[0]
-      handler(this.decodeParam(Bytes.default(), exitId) as Bytes)
+      const stateUpdate = StateUpdate.fromStruct(
+        this.decodeParam(StateUpdate.getParamType(), log.values[1]) as Struct
+      )
+      handler(this.decodeParam(Bytes.default(), exitId) as Bytes, stateUpdate)
     })
   }
 

@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@cryptoeconomicslab/level-kvs": "^0.0.6",
-    "@cryptoeconomicslab/primitives": "0.4.0",
+    "@cryptoeconomicslab/primitives": "0.6.0",
     "@cryptoeconomicslab/substrate-adaptor": "^0.0.1",
     "@cryptoeconomicslab/substrate-plasma-light-client": "^0.0.1",
     "@polkadot/api": "^1.23.1",

@@ -5,7 +5,7 @@ import { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
 import { IOwnershipPayoutContract } from '@cryptoeconomicslab/contract'
 import { Address, BigNumber, Codable } from '@cryptoeconomicslab/primitives'
-import { Property } from '@cryptoeconomicslab/ovm'
+import { StateUpdate } from '@cryptoeconomicslab/plasma'
 import { encodeToPolcadotCodec } from '../coder/PolcadotCoder'
 
 export class OwnershipPayoutContract implements IOwnershipPayoutContract {
@@ -31,7 +31,7 @@ export class OwnershipPayoutContract implements IOwnershipPayoutContract {
    */
   public async finalizeExit(
     depositContractAddress: Address,
-    exitProperty: Property,
+    exit: StateUpdate,
     depositedRangeId: BigNumber,
     owner: Address
   ): Promise<void> {
@@ -40,7 +40,7 @@ export class OwnershipPayoutContract implements IOwnershipPayoutContract {
         this.contractId,
         ...[
           depositContractAddress,
-          exitProperty.toStruct(),
+          exit.toStruct(),
           depositedRangeId,
           owner
         ].map(i => this.encodeParam(i))

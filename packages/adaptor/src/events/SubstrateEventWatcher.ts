@@ -6,6 +6,7 @@ import {
   IEventWatcher,
   CompletedHandler
 } from '@cryptoeconomicslab/contract'
+import { BigNumber } from '@cryptoeconomicslab/primitives'
 import { ApiPromise } from '@polkadot/api'
 
 export type SubstrateEventWatcherArgType = {
@@ -57,7 +58,11 @@ export default class EventWatcher implements IEventWatcher {
         const { event } = record
         const handler = this.checkingEvents.get(event.method)
         if (handler) {
-          handler({ name: event.method, values: event.data })
+          handler({
+            name: event.method,
+            values: event.data,
+            mainchainBlockNumber: BigNumber.from(0)
+          })
         } else {
           console.warn(`unknow event ${event.method}.`)
         }
