@@ -133,8 +133,12 @@ export class ExitDisputeContract implements IExitDisputeContract {
     return decision.toNumber()
   }
 
-  isCompletable(stateUpdate: StateUpdate): Promise<boolean> {
-    throw new Error('Method not implemented.')
+  async isCompletable(stateUpdate: StateUpdate): Promise<boolean> {
+    const codec = await this.api.query.adjudication.getClaimDecision(
+      this.encodeParam(stateUpdate.toStruct())
+    )
+    const isCompletable = codec as types.bool
+    return isCompletable.isTrue
   }
 
   subscribeExitClaimed(handler: (stateUpdate: StateUpdate) => void): void {

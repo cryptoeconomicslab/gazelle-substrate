@@ -4,20 +4,11 @@ import AccountId from '@polkadot/types/generic/AccountId'
 import types, { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
 import { EventLog } from '@cryptoeconomicslab/contract'
-import {
-  Address,
-  Bytes,
-  FixedBytes,
-  Struct,
-  Codable,
-  Property
-} from '@cryptoeconomicslab/primitives'
+import { Address, Bytes, Struct, Codable } from '@cryptoeconomicslab/primitives'
 import { ICheckpointDisputeContract } from '@cryptoeconomicslab/contract'
-import { Keccak256 } from '@cryptoeconomicslab/hash'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
 import EventWatcher from '../events/SubstrateEventWatcher'
-import { encodeProperty } from '@cryptoeconomicslab/ovm'
-import PolcadotCoder, {
+import {
   decodeFromPolcadotCodec,
   encodeToPolcadotCodec
 } from '../coder/PolcadotCoder'
