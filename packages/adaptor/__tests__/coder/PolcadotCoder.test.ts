@@ -8,10 +8,10 @@ import {
   Address,
   Struct,
   Integer,
+  Property,
   Range
 } from '@cryptoeconomicslab/primitives'
-import { Transaction } from '@cryptoeconomicslab/plasma'
-import { Property } from '@cryptoeconomicslab/ovm'
+import { UnsignedTransaction } from '@cryptoeconomicslab/plasma'
 import { setupContext } from '@cryptoeconomicslab/context'
 setupContext({ coder: PolcadotCoder })
 
@@ -257,27 +257,25 @@ describe('PolcadotCoder', () => {
       const ownershipState = new Property(ownershipPredicateAddress, [
         PolcadotCoder.encode(owner)
       ])
+      const chunkId = FixedBytes.default(32)
       const from = Address.from('0x0000000000000000000000000000000000000004')
-      const tx = new Transaction(
+      const tx = new UnsignedTransaction(
         depositContractAddress,
         range,
         maxBlockNumber,
         ownershipState,
+        chunkId,
         from
       )
       const transactionPredicateAddress = Address.from(
         '0x0000000000000000000000000000000000000005'
       )
       // current transaction body data
-      expect(
-        PolcadotCoder.encode(
-          tx.toProperty(transactionPredicateAddress).toStruct()
-        ).toHexString()
-      ).toEqual(
+      expect(PolcadotCoder.encode(tx.toStruct()).toHexString()).toEqual(
         '0x00000000000000000000000000000000000000050000000000000000000000001080000000000000000000000000000000000000000100000000000000000000000080000000000000000000000000000000000a000000000000000000000000000000400a0000000000000000000000000000000901000000000000000000000000000000000000000200000000000000000000000004800000000000000000000000000000000000000003000000000000000000000000'
       )
       // optimize?
-      expect(PolcadotCoder.encode(tx.body).toHexString()).toEqual(
+      expect(PolcadotCoder.encode(tx.message).toHexString()).toEqual(
         '0x0000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000048000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000004000000000000000000000000'
       )
     })

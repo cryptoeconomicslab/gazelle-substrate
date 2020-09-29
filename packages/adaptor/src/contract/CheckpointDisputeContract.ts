@@ -3,13 +3,11 @@ import { KeyringPair } from '@polkadot/keyring/types'
 import AccountId from '@polkadot/types/generic/AccountId'
 import types, { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
-import { IAdjudicationContract, EventLog } from '@cryptoeconomicslab/contract'
+import { EventLog } from '@cryptoeconomicslab/contract'
 import {
   Address,
   Bytes,
-  BigNumber,
   FixedBytes,
-  List,
   Struct,
   Codable,
   Property
@@ -18,7 +16,7 @@ import { ICheckpointDisputeContract } from '@cryptoeconomicslab/contract'
 import { Keccak256 } from '@cryptoeconomicslab/hash'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
 import EventWatcher from '../events/SubstrateEventWatcher'
-import { ChallengeGame, encodeProperty } from '@cryptoeconomicslab/ovm'
+import { encodeProperty } from '@cryptoeconomicslab/ovm'
 import PolcadotCoder, {
   decodeFromPolcadotCodec,
   encodeToPolcadotCodec
@@ -140,20 +138,41 @@ export class CheckpointDisputeContract implements ICheckpointDisputeContract {
       )
     })
   }
+
   subscribeCheckpointChallengeRemoved(
-    handler: (
-      stateUpdate: import('@cryptoeconomicslab/plasma').StateUpdate,
-      challenge: import('@cryptoeconomicslab/plasma').StateUpdate
-    ) => void
+    handler: (stateUpdate: StateUpdate, challenge: StateUpdate) => void
   ): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe(
+      'CheckpointChallengeRemoved',
+      (log: EventLog) => {
+        handler(
+          StateUpdate.fromStruct(
+            this.decodeParam(
+              StateUpdate.getParamType(),
+              log.values[0]
+            ) as Struct
+          ),
+          StateUpdate.fromStruct(
+            this.decodeParam(
+              StateUpdate.getParamType(),
+              log.values[1]
+            ) as Struct
+          )
+        )
+      }
+    )
   }
+
   subscribeCheckpointSettled(
-    handler: (
-      stateUpdate: import('@cryptoeconomicslab/plasma').StateUpdate
-    ) => void
+    handler: (stateUpdate: StateUpdate) => void
   ): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe('CheckpointSettled', (log: EventLog) => {
+      handler(
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        )
+      )
+    })
   }
 
   async startWatchingEvents() {
@@ -173,13 +192,5 @@ export class CheckpointDisputeContract implements ICheckpointDisputeContract {
 
   private decodeParam(def: Codable, input: Codec): Codable {
     return decodeFromPolcadotCodec(this.registry, def, input)
-  }
-
-  private getPropertyHash(property: Property) {
-    const propertyHash = FixedBytes.fromHexString(
-      32,
-      Keccak256.hash(encodeProperty(PolcadotCoder, property)).toHexString()
-    )
-    return propertyHash
   }
 }

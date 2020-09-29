@@ -31,6 +31,7 @@
   "dependencies": {
     "@cryptoeconomicslab/contract": "0.6.0",
     "@cryptoeconomicslab/db": "0.6.0",
+    "@cryptoeconomicslab/hash": "0.6.0",
     "@cryptoeconomicslab/ovm": "0.6.0",
     "@cryptoeconomicslab/plasma": "0.6.0",
     "@cryptoeconomicslab/wallet": "0.6.0",

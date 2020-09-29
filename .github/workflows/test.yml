@@ -2,26 +2,6 @@ name: Test
 on: push
 
 jobs:
-  lint:
-    name: Linting
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [10.x]
-    steps:
-      - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: lint
-        run: |
-          npm install -g npm@latest
-          npm install -g lerna
-          npm install --frozen-lockfile
-          lerna bootstrap
-          npm run lint
-
   test:
     name: Testing
     runs-on: ubuntu-latest

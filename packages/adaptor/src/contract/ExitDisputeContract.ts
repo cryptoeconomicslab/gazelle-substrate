@@ -4,29 +4,47 @@ import AccountId from '@polkadot/types/generic/AccountId'
 import types, { TypeRegistry } from '@polkadot/types'
 import { Codec } from '@polkadot/types/types'
 import { EventLog, IExitDisputeContract } from '@cryptoeconomicslab/contract'
-import {
-  Address,
-  Bytes,
-  BigNumber,
-  FixedBytes,
-  List,
-  Struct,
-  Codable,
-  Property
-} from '@cryptoeconomicslab/primitives'
-import { Keccak256 } from '@cryptoeconomicslab/hash'
+import { Address, Bytes, Struct, Codable } from '@cryptoeconomicslab/primitives'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
 import EventWatcher from '../events/SubstrateEventWatcher'
-import { ChallengeGame, encodeProperty } from '@cryptoeconomicslab/ovm'
 import PolcadotCoder, {
   decodeFromPolcadotCodec,
   encodeToPolcadotCodec
 } from '../coder/PolcadotCoder'
-import { StateUpdate } from '@cryptoeconomicslab/plasma'
+import {
+  StateUpdate,
+  EXIT_CHALLENGE_TYPE,
+  ExitChallenge
+} from '@cryptoeconomicslab/plasma'
 import { DoubleLayerInclusionProof } from '@cryptoeconomicslab/merkle-tree'
 
+function createChallengeInputAndWitness(
+  challenge: ExitChallenge
+): { challengeInput: Bytes[]; witness: Bytes[] } {
+  const coder = PolcadotCoder
+  if (challenge.type === EXIT_CHALLENGE_TYPE.SPENT) {
+    return {
+      challengeInput: [
+        Bytes.fromString(challenge.type),
+        challenge.transaction.message
+      ],
+      witness: challenge.witness.map(w => w)
+    }
+  } else if (challenge.type === EXIT_CHALLENGE_TYPE.CHECKPOINT) {
+    return {
+      challengeInput: [
+        Bytes.fromString(challenge.type),
+        coder.encode(challenge.challengeStateUpdate.toStruct())
+      ],
+      witness: [coder.encode(challenge.inclusionProof.toStruct())]
+    }
+  } else {
+    throw new Error('Invalid Exit challenge type')
+  }
+}
+
 /**
- * @name AdjudicationContract
+ * @name ExitDisputeContract
  * @description Adjudication Contract is the contract to archive dispute game defined by predicate logic.
  */
 export class ExitDisputeContract implements IExitDisputeContract {
@@ -48,63 +66,145 @@ export class ExitDisputeContract implements IExitDisputeContract {
       contractAddress: address.data
     })
   }
-  claim(
+
+  async claim(
     stateUpdate: StateUpdate,
     inclusionProof: DoubleLayerInclusionProof
   ): Promise<void> {
-    throw new Error('Method not implemented.')
+    await this.api.tx.adjudication
+      .claim(
+        this.encodeParam(stateUpdate.toStruct()),
+        this.encodeParam(inclusionProof.toStruct())
+      )
+      .signAndSend(this.keyPair, {})
   }
-  claimExitCheckpoint(
+
+  async claimExitCheckpoint(
     stateUpdate: StateUpdate,
     checkpoint: StateUpdate
   ): Promise<void> {
-    throw new Error('Method not implemented.')
+    await this.api.tx.adjudication
+      .claimExitCheckpoint(
+        this.encodeParam(stateUpdate.toStruct()),
+        this.encodeParam(checkpoint.toStruct())
+      )
+      .signAndSend(this.keyPair, {})
   }
-  challenge(
-    challenge: import('@cryptoeconomicslab/plasma').ExitChallenge
-  ): Promise<void> {
-    throw new Error('Method not implemented.')
+
+  async challenge(challenge: ExitChallenge): Promise<void> {
+    const { challengeInput, witness } = createChallengeInputAndWitness(
+      challenge
+    )
+
+    await this.api.tx.adjudication
+      .challenge(
+        this.encodeParam(challenge.stateUpdate.toStruct()),
+        challengeInput.map(i => this.encodeParam(i)),
+        witness.map(w => this.encodeParam(w))
+      )
+      .signAndSend(this.keyPair, {})
   }
-  removeChallenge(
+
+  async removeChallenge(
     stateUpdate: StateUpdate,
     challenge: StateUpdate,
     witness: Bytes[]
   ): Promise<void> {
-    throw new Error('Method not implemented.')
+    await this.api.tx.adjudication
+      .removeChallenge(
+        this.encodeParam(stateUpdate.toStruct()),
+        this.encodeParam(challenge.toStruct()),
+        witness.map(w => this.encodeParam(w))
+      )
+      .signAndSend(this.keyPair, {})
   }
-  settle(stateUpdate: StateUpdate): Promise<void> {
-    throw new Error('Method not implemented.')
+
+  async settle(stateUpdate: StateUpdate): Promise<void> {
+    await this.api.tx.adjudication
+      .settle(this.encodeParam(stateUpdate.toStruct()))
+      .signAndSend(this.keyPair, {})
   }
-  getClaimDecision(stateUpdate: StateUpdate): Promise<number> {
-    throw new Error('Method not implemented.')
+
+  async getClaimDecision(stateUpdate: StateUpdate): Promise<number> {
+    const codec = await this.api.query.adjudication.getClaimDecision(
+      this.encodeParam(stateUpdate.toStruct())
+    )
+    const decision = codec as types.u128
+    return decision.toNumber()
   }
+
   isCompletable(stateUpdate: StateUpdate): Promise<boolean> {
     throw new Error('Method not implemented.')
   }
+
   subscribeExitClaimed(handler: (stateUpdate: StateUpdate) => void): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe('ExitClaimed', (log: EventLog) => {
+      handler(
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        )
+      )
+    })
   }
+
   subscribeExitChallenged(
     handler: (
-      challengeType: import('@cryptoeconomicslab/plasma').EXIT_CHALLENGE_TYPE,
+      challengeType: EXIT_CHALLENGE_TYPE,
       stateUpdate: StateUpdate,
       challengeStateUpdate?: StateUpdate | undefined
     ) => void
   ): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe('ExitSpentChallenged', (log: EventLog) => {
+      handler(
+        EXIT_CHALLENGE_TYPE.SPENT,
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        )
+      )
+    })
+    this.eventWatcher.subscribe('ExitCheckpointChallenged', (log: EventLog) => {
+      handler(
+        EXIT_CHALLENGE_TYPE.CHECKPOINT,
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        ),
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[1]) as Struct
+        )
+      )
+    })
   }
+
   subscribeExitChallengeRemoved(
     handler: (
       stateUpdate: StateUpdate,
       challengeStateUpdate: StateUpdate
     ) => void
   ): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe('ExitChallengeRemoved', (log: EventLog) => {
+      handler(
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        ),
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[1]) as Struct
+        )
+      )
+    })
   }
+
   subscribeExitSettled(
     handler: (stateUpdate: StateUpdate, decision: boolean) => void
   ): void {
-    throw new Error('Method not implemented.')
+    this.eventWatcher.subscribe('ExitSettled', (log: EventLog) => {
+      const decision = log.values[1] as types.bool
+      handler(
+        StateUpdate.fromStruct(
+          this.decodeParam(StateUpdate.getParamType(), log.values[0]) as Struct
+        ),
+        decision.isTrue
+      )
+    })
   }
 
   async startWatchingEvents() {
@@ -124,13 +224,5 @@ export class ExitDisputeContract implements IExitDisputeContract {
 
   private decodeParam(def: Codable, input: Codec): Codable {
     return decodeFromPolcadotCodec(this.registry, def, input)
-  }
-
-  private getPropertyHash(property: Property) {
-    const propertyHash = FixedBytes.fromHexString(
-      32,
-      Keccak256.hash(encodeProperty(PolcadotCoder, property)).toHexString()
-    )
-    return propertyHash
   }
 }
