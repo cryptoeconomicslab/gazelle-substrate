@@ -8,7 +8,9 @@ import {
   CommitmentContract,
   AdjudicationContract,
   OwnershipPayoutContract,
-  SubstarteContractConfig
+  SubstarteContractConfig,
+  CheckpointDisputeContract,
+  ExitDisputeContract
 } from '@cryptoeconomicslab/substrate-adaptor'
 import { Address, Bytes } from '@cryptoeconomicslab/primitives'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
@@ -16,15 +18,20 @@ import LightClient from '@cryptoeconomicslab/plasma-light-client'
 import { DeciderConfig } from '@cryptoeconomicslab/ovm'
 import { setupContext } from '@cryptoeconomicslab/context'
 import customTypes from './customTypes'
+import { PlasmaContractConfig } from '@cryptoeconomicslab/plasma'
 
 setupContext({
   coder: PolcadotCoder
 })
 
+type SubstrateContractConfig = {
+  PlasmaETH: string
+}
+
 export interface SubstrateLightClientOptions {
   keyringPair: KeyringPair
   kvs: KeyValueStore
-  config: DeciderConfig & SubstarteContractConfig
+  config: DeciderConfig & PlasmaContractConfig & SubstrateContractConfig
   plappId: Address
   aggregatorEndpoint?: string
 }
@@ -59,7 +66,7 @@ export default async function initialize(options: SubstrateLightClientOptions) {
     return new ERC20Contract(address, apiPromise, keyringPair)
   }
   const commitmentContract = new CommitmentContract(
-    Address.from(options.config.commitmentContract),
+    Address.from(options.config.commitment),
     eventDb,
     apiPromise,
     keyringPair
@@ -69,6 +76,19 @@ export default async function initialize(options: SubstrateLightClientOptions) {
     apiPromise,
     keyringPair
   )
+  const checkpointDisputeContract = new CheckpointDisputeContract(
+    Address.from(options.config.checkpointDispute),
+    eventDb,
+    apiPromise,
+    keyringPair
+  )
+  const exitDisputeContract = new ExitDisputeContract(
+    Address.from(options.config.exitDispute),
+    eventDb,
+    apiPromise,
+    keyringPair
+  )
+
   const client = await LightClient.initilize({
     wallet: substrateWallet,
     witnessDb: options.kvs,
@@ -77,18 +97,14 @@ export default async function initialize(options: SubstrateLightClientOptions) {
     tokenContractFactory,
     commitmentContract,
     ownershipPayoutContract,
+    checkpointDisputeContract,
+    exitDisputeContract,
     deciderConfig: options.config,
     aggregatorEndpoint: options.aggregatorEndpoint
   })
-  await client.registerCustomToken(
-    new ERC20Contract(
-      Address.from(options.config.PlasmaETH),
-      apiPromise,
-      keyringPair
-    ),
-    depositContractFactory(
-      Address.from(options.config.payoutContracts['DepositContract'])
-    )
+  await client.registerToken(
+    options.config.PlasmaETH,
+    options.config.payoutContracts['DepositContract']
   )
   await client.start()
   return client

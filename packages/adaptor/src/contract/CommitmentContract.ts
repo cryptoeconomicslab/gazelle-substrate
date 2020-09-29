@@ -8,7 +8,8 @@ import {
   Address,
   BigNumber,
   Codable,
-  FixedBytes
+  FixedBytes,
+  Integer
 } from '@cryptoeconomicslab/primitives'
 import { KeyValueStore } from '@cryptoeconomicslab/db'
 import EventWatcher from '../events/SubstrateEventWatcher'
@@ -86,14 +87,21 @@ export class CommitmentContract implements ICommitmentContract {
    * @param handler
    */
   subscribeBlockSubmitted(
-    handler: (blockNumber: BigNumber, root: FixedBytes) => void
+    handler: (
+      blockNumber: BigNumber,
+      root: FixedBytes,
+      mainchainBlockNumber: BigNumber,
+      mainchainTimestamp: Integer
+    ) => void
   ) {
     this.eventWatcher.subscribe('BlockSubmitted', (log: EventLog) => {
       const blockNumber: Codec = log.values[0]
       const root: Codec = log.values[1]
       handler(
         this.decodeParam(BigNumber.default(), blockNumber) as BigNumber,
-        this.decodeParam(FixedBytes.default(32), root) as FixedBytes
+        this.decodeParam(FixedBytes.default(32), root) as FixedBytes,
+        BigNumber.from(0),
+        Integer.from(0)
       )
     })
   }

@@ -29,20 +29,22 @@
     "clean": "rm -rf lib docs"
   },
   "dependencies": {
-    "@cryptoeconomicslab/contract": "0.4.0",
-    "@cryptoeconomicslab/db": "0.4.0",
-    "@cryptoeconomicslab/ovm": "0.4.0",
-    "@cryptoeconomicslab/plasma": "0.4.0",
-    "@cryptoeconomicslab/wallet": "0.4.0",
+    "@cryptoeconomicslab/contract": "0.6.0",
+    "@cryptoeconomicslab/db": "0.6.0",
+    "@cryptoeconomicslab/hash": "0.6.0",
+    "@cryptoeconomicslab/ovm": "0.6.0",
+    "@cryptoeconomicslab/plasma": "0.6.0",
+    "@cryptoeconomicslab/wallet": "0.6.0",
     "@polkadot/api": "^1.23.1",
     "@polkadot/keyring": "^2.17.1",
     "jsbi": "^3.1.2"
   },
   "devDependencies": {
-    "@cryptoeconomicslab/coder": "^0.4.0",
-    "@cryptoeconomicslab/context": "^0.4.0"
+    "@cryptoeconomicslab/coder": "^0.6.0",
+    "@cryptoeconomicslab/context": "^0.6.0",
+    "ethers": "^4.0.46"
   },
   "peerDependencies": {
-    "@cryptoeconomicslab/primitives": "^0.4.0"
+    "@cryptoeconomicslab/primitives": "^0.6.0"
   }
 }
