@@ -37,12 +37,12 @@
     "@cryptoeconomicslab/wallet": "0.6.0",
     "@polkadot/api": "^1.23.1",
     "@polkadot/keyring": "^2.17.1",
-    "ethers": "^4.0.46",
     "jsbi": "^3.1.2"
   },
   "devDependencies": {
     "@cryptoeconomicslab/coder": "^0.6.0",
-    "@cryptoeconomicslab/context": "^0.6.0"
+    "@cryptoeconomicslab/context": "^0.6.0",
+    "ethers": "^4.0.46"
   },
   "peerDependencies": {
     "@cryptoeconomicslab/primitives": "^0.6.0"
